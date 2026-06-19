@@ -1,0 +1,51 @@
+{
+    "name": "l-mendes/laravel-aws-marketplace",
+    "description": "AWS Marketplace integration for Laravel SaaS: customer resolution, contract entitlements, metered usage, and EventBridge lifecycle events.",
+    "license": "MIT",
+    "keywords": ["laravel", "aws", "aws-marketplace", "marketplace", "saas", "metering", "billing", "entitlements"],
+    "homepage": "https://github.com/l-mendes/laravel-aws-marketplace",
+    "authors": [
+        {
+            "name": "Lucas Mendes Madruga",
+            "email": "luucas.mds@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "aws/aws-sdk-php": "^3.369",
+        "illuminate/console": "^12.0",
+        "illuminate/contracts": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/http": "^12.0",
+        "illuminate/routing": "^12.0",
+        "illuminate/support": "^12.0",
+        "nesbot/carbon": "^3.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^12.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "LMendes\\LaravelAwsMarketplace\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LMendes\\LaravelAwsMarketplace\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LMendes\\LaravelAwsMarketplace\\LaravelAwsMarketplaceServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
