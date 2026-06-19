@@ -108,8 +108,9 @@ class HandleWebhookController
         $repository = $this->container->make(SubscriptionRepository::class);
 
         $existing = $repository->find($event->agreementId);
+        $status = $event->type->toSubscriptionStatus();
 
-        if ($existing === null && $event->type->toSubscriptionStatus() === SubscriptionStatus::Unsubscribed) {
+        if ($existing === null && ($status === SubscriptionStatus::Unsubscribed || $status === SubscriptionStatus::Superseded)) {
             return null;
         }
 

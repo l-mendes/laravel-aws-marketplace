@@ -22,6 +22,7 @@ class LifecycleEventFactory
             EventType::Renewed => new SubscriptionRenewed($subscription, $event),
             EventType::Replaced => new SubscriptionReplaced($subscription, $event),
             EventType::Updated => new SubscriptionUpdated($subscription, $event, new SubscriptionChanges($event->changes)),
+            EventType::Superseded => new SubscriptionSuperseded($subscription, $event),
             EventType::Unsubscribed => new SubscriptionCancelled($subscription, $event, $event->cancellationReason ?? CancellationReason::Unknown),
             EventType::Unknown => null,
         };

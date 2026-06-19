@@ -187,12 +187,18 @@ Event::listen(SubscriptionCancelled::class, function (SubscriptionCancelled $e) 
 ## 6. Renewals and replacements
 
 When an agreement renews or is replaced, AWS creates a new agreement with a new LicenseArn and ends the
-old one (with status RENEWED or REPLACED, which this library treats as "not a cancellation" so access is
-not revoked). You receive:
+old one with status RENEWED or REPLACED. You receive:
 
-- `SubscriptionRenewed` or `SubscriptionReplaced` for the new agreement (intent RENEW or REPLACE on the
+- `SubscriptionSuperseded` for the OLD agreement (Purchase Agreement Ended, status RENEWED or REPLACED).
+  Its subscription is marked `superseded`. This is NOT a cancellation: do not revoke access. Read
+  `$e->event->agreementStatus` for RENEWED vs REPLACED. Use it to close or archive the old record.
+- `SubscriptionRenewed` or `SubscriptionReplaced` for the NEW agreement (intent RENEW or REPLACE on the
   Purchase Agreement Created event). `$e->subscription->id` is the new agreement id.
 - then a `SubscriptionUpdated` (License Updated) carrying the new LicenseArn.
+
+The two arrive on different subscriptions (old and new agreement ids) and AWS gives no order guarantee,
+so keep your `SubscriptionSuperseded` (close the old) and `SubscriptionRenewed`/`Replaced` (open the new)
+handlers independent and idempotent.
 
 Because AWS exposes no link from the new agreement to the old one, you reconcile it to the existing
 customer using the buyer account id:
@@ -326,7 +332,7 @@ All events use source `aws.agreement-marketplace`. The detail-type ends with ` -
 | Purchase Agreement Amended | intent AMEND | `SubscriptionUpdated` | no |
 | License Updated | - | `SubscriptionUpdated` | yes |
 | Purchase Agreement Ended | status CANCELLED / EXPIRED / TERMINATED | `SubscriptionCancelled` | no |
-| Purchase Agreement Ended | status RENEWED / REPLACED | none (catch-all only) | no |
+| Purchase Agreement Ended | status RENEWED / REPLACED | `SubscriptionSuperseded` | no |
 | License Deprovisioned | - | `SubscriptionCancelled` | yes |
 
 `AwsMarketplaceEvent` (on every dispatched event as `$event->event`) carries: `type`, `detailType`,

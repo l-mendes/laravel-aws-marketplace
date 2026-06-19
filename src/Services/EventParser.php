@@ -58,18 +58,36 @@ class EventParser
     private function mapType(string $detailType, ?string $intent, ?string $status): EventType
     {
         return match ($detailType) {
-            'Purchase Agreement Created' => match ($intent) {
-                'RENEW' => EventType::Renewed,
-                'REPLACE' => EventType::Replaced,
-                default => EventType::Activated,
-            },
+            'Purchase Agreement Created' => $this->intentToType($intent),
             'Purchase Agreement Amended', 'License Updated' => EventType::Updated,
-            'Purchase Agreement Ended' => match ($status) {
-                'RENEWED', 'REPLACED' => EventType::Unknown,
-                default => EventType::Unsubscribed,
-            },
+            'Purchase Agreement Ended' => $this->endedStatusToType($status),
             'License Deprovisioned' => EventType::Unsubscribed,
             default => EventType::Unknown,
+        };
+    }
+
+    /**
+     * The intent on a Purchase Agreement Created event: NEW (first purchase) activates, RENEW is an
+     * auto-renewal, REPLACE is an agreement-based replacement.
+     */
+    private function intentToType(?string $intent): EventType
+    {
+        return match ($intent) {
+            'RENEW' => EventType::Renewed,
+            'REPLACE' => EventType::Replaced,
+            default => EventType::Activated,
+        };
+    }
+
+    /**
+     * The status on a Purchase Agreement Ended event. RENEWED or REPLACED is not a real termination (the
+     * superseding agreement carries the signal), so it maps to Unknown to avoid revoking access.
+     */
+    private function endedStatusToType(?string $status): EventType
+    {
+        return match ($status) {
+            'RENEWED', 'REPLACED' => EventType::Superseded,
+            default => EventType::Unsubscribed,
         };
     }
 

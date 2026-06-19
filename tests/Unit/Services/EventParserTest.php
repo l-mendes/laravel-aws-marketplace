@@ -53,8 +53,8 @@ class EventParserTest extends TestCase
             ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'CANCELLED']], EventType::Unsubscribed],
             ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'EXPIRED']], EventType::Unsubscribed],
             ['Purchase Agreement Ended - Manufacturer', ['agreement' => ['status' => 'TERMINATED']], EventType::Unsubscribed],
-            ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'RENEWED']], EventType::Unknown],
-            ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'REPLACED']], EventType::Unknown],
+            ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'RENEWED']], EventType::Superseded],
+            ['Purchase Agreement Ended - Proposer', ['agreement' => ['status' => 'REPLACED']], EventType::Superseded],
             ['License Deprovisioned - Manufacturer', [], EventType::Unsubscribed],
             ['Something Else', [], EventType::Unknown],
         ];
@@ -174,5 +174,35 @@ class EventParserTest extends TestCase
         $event = $this->parser->parse($payload);
 
         $this->assertSame($payload, $event->raw);
+    }
+
+    #[Test]
+    public function it_leaves_the_current_period_end_null_when_the_end_time_is_absent_blank_or_malformed(): void
+    {
+        $absent = $this->parser->parse($this->payload('Purchase Agreement Created - Proposer', ['agreement' => ['intent' => 'NEW']]));
+        $blank = $this->parser->parse($this->payload('Purchase Agreement Created - Proposer', ['agreement' => ['intent' => 'NEW', 'endTime' => '']]));
+        $malformed = $this->parser->parse($this->payload('Purchase Agreement Created - Proposer', ['agreement' => ['intent' => 'NEW', 'endTime' => 'not-a-date']]));
+
+        $this->assertNull($absent->currentPeriodEnd);
+        $this->assertNull($blank->currentPeriodEnd);
+        $this->assertNull($malformed->currentPeriodEnd);
+    }
+
+    #[Test]
+    public function it_defaults_the_final_metering_deadline_to_one_hour_from_now_when_a_termination_has_no_end_time(): void
+    {
+        CarbonImmutable::setTestNow('2026-06-19T12:00:00Z');
+
+        try {
+            $event = $this->parser->parse($this->payload('License Deprovisioned - Manufacturer', [
+                'agreement' => ['id' => 'agmt-1'],
+                'license' => ['arn' => 'arn-1'],
+            ]));
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+
+        $this->assertNotNull($event->finalMeteringDeadline);
+        $this->assertTrue(CarbonImmutable::parse('2026-06-19T13:00:00Z')->equalTo($event->finalMeteringDeadline));
     }
 }

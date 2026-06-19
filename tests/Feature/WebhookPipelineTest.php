@@ -10,6 +10,7 @@ use LMendes\LaravelAwsMarketplace\Events\AwsMarketplaceEventReceived;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionActivated;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionCancelled;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionRenewed;
+use LMendes\LaravelAwsMarketplace\Events\SubscriptionSuperseded;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionUpdated;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -124,9 +125,9 @@ class WebhookPipelineTest extends FeatureTestCase
     }
 
     #[Test]
-    public function an_end_superseded_by_a_renewal_does_not_cancel(): void
+    public function an_end_superseded_by_a_renewal_marks_it_superseded_without_cancelling(): void
     {
-        Event::fake([SubscriptionCancelled::class, AwsMarketplaceEventReceived::class]);
+        Event::fake([SubscriptionSuperseded::class, SubscriptionCancelled::class]);
 
         $this->landed('agmt-1', 'arn-1');
 
@@ -140,9 +141,9 @@ class WebhookPipelineTest extends FeatureTestCase
             ],
         ])->assertOk();
 
+        Event::assertDispatched(SubscriptionSuperseded::class, fn ($e) => $e->subscription->id === 'agmt-1' && $e->event->agreementStatus === 'RENEWED');
         Event::assertNotDispatched(SubscriptionCancelled::class);
-        Event::assertDispatched(AwsMarketplaceEventReceived::class);
-        $this->assertDatabaseHas('aws_marketplace_subscriptions', ['agreement_id' => 'agmt-1', 'status' => 'active']);
+        $this->assertDatabaseHas('aws_marketplace_subscriptions', ['agreement_id' => 'agmt-1', 'status' => 'superseded']);
     }
 
     #[Test]
@@ -197,5 +198,62 @@ class WebhookPipelineTest extends FeatureTestCase
         ])->assertStatus(500);
 
         $this->assertDatabaseCount('aws_marketplace_processed_events', 0);
+    }
+
+    #[Test]
+    public function a_cancellation_for_an_unknown_subscription_is_dispatched_but_not_persisted(): void
+    {
+        Event::fake([SubscriptionCancelled::class, AwsMarketplaceEventReceived::class]);
+
+        $this->postWebhook([
+            'detail-type' => 'Purchase Agreement Ended - Proposer',
+            'source' => 'aws.agreement-marketplace',
+            'detail' => [
+                'requestId' => 'req-ghost',
+                'agreement' => ['id' => 'ghost-1', 'status' => 'CANCELLED'],
+                'acceptor' => ['accountId' => 'acct-1'],
+            ],
+        ])->assertOk();
+
+        Event::assertDispatched(SubscriptionCancelled::class, fn ($e) => $e->subscription->id === 'ghost-1');
+        Event::assertDispatched(AwsMarketplaceEventReceived::class, fn ($e) => $e->subscription === null);
+        $this->assertDatabaseCount('aws_marketplace_subscriptions', 0);
+    }
+
+    #[Test]
+    public function a_supersession_for_an_unknown_subscription_is_dispatched_but_not_persisted(): void
+    {
+        Event::fake([SubscriptionSuperseded::class]);
+
+        $this->postWebhook([
+            'detail-type' => 'Purchase Agreement Ended - Proposer',
+            'source' => 'aws.agreement-marketplace',
+            'detail' => [
+                'requestId' => 'req-superseded-ghost',
+                'agreement' => ['id' => 'ghost-2', 'status' => 'REPLACED'],
+                'acceptor' => ['accountId' => 'acct-1'],
+            ],
+        ])->assertOk();
+
+        Event::assertDispatched(SubscriptionSuperseded::class, fn ($e) => $e->subscription->id === 'ghost-2' && $e->event->agreementStatus === 'REPLACED');
+        $this->assertDatabaseCount('aws_marketplace_subscriptions', 0);
+    }
+
+    #[Test]
+    public function an_unrecognized_event_is_surfaced_only_through_the_generic_event(): void
+    {
+        Event::fake([AwsMarketplaceEventReceived::class]);
+
+        $this->postWebhook([
+            'detail-type' => 'Something Else',
+            'source' => 'aws.agreement-marketplace',
+            'detail' => [
+                'requestId' => 'req-unknown',
+                'agreement' => ['id' => 'agmt-x'],
+            ],
+        ])->assertOk();
+
+        Event::assertDispatched(AwsMarketplaceEventReceived::class, fn ($e) => $e->subscription === null);
+        $this->assertDatabaseCount('aws_marketplace_subscriptions', 0);
     }
 }

@@ -11,6 +11,7 @@ use LMendes\LaravelAwsMarketplace\Events\SubscriptionActivated;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionCancelled;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionRenewed;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionReplaced;
+use LMendes\LaravelAwsMarketplace\Events\SubscriptionSuperseded;
 use LMendes\LaravelAwsMarketplace\Events\SubscriptionUpdated;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -37,6 +38,7 @@ class LifecycleEventFactoryTest extends TestCase
             [EventType::Renewed, SubscriptionRenewed::class],
             [EventType::Replaced, SubscriptionReplaced::class],
             [EventType::Updated, SubscriptionUpdated::class],
+            [EventType::Superseded, SubscriptionSuperseded::class],
             [EventType::Unsubscribed, SubscriptionCancelled::class],
         ];
 

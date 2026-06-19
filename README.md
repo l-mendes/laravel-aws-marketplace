@@ -149,7 +149,8 @@ Event::listen(SubscriptionCancelled::class, function (SubscriptionCancelled $e) 
 ```
 
 The full set: `SubscriptionActivated`, `SubscriptionRenewed`, `SubscriptionReplaced`,
-`SubscriptionUpdated` (with a `changes` hint), `SubscriptionCancelled` (with a `reason`), plus the
+`SubscriptionUpdated` (with a `changes` hint), `SubscriptionSuperseded` (the old agreement after a
+renewal or replacement, not a cancellation), `SubscriptionCancelled` (with a `reason`), plus the
 catch-all `AwsMarketplaceEventReceived` dispatched for every delivery.
 
 ### 3. Entitlements and metering
