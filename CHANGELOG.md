@@ -7,7 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-06-22
+## [0.1.0] - 2026-06-22
 
 ### Added
 
@@ -23,5 +23,5 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repositories and a polymorphic owner.
 - Console commands `aws-marketplace:install` and `aws-marketplace:prune-events`.
 
-[Unreleased]: https://github.com/l-mendes/laravel-aws-marketplace/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/l-mendes/laravel-aws-marketplace/releases/tag/v1.0.0
+[Unreleased]: https://github.com/l-mendes/laravel-aws-marketplace/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/l-mendes/laravel-aws-marketplace/releases/tag/v0.1.0

@@ -2,11 +2,12 @@
 
 ## Supported versions
 
-Security fixes are released for the latest stable minor of the current major.
+Security fixes are released for the latest stable release. Until the 1.0.0 release the public API may
+still change between minor (0.x) versions.
 
 | Version | Supported |
 | --- | --- |
-| 1.x | yes |
+| 0.1.x | yes |
 
 ## Reporting a vulnerability
 
