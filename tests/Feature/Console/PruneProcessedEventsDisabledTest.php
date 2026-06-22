@@ -2,13 +2,14 @@
 
 namespace LMendes\LaravelAwsMarketplace\Tests\Feature\Console;
 
+use Illuminate\Foundation\Application;
 use LMendes\LaravelAwsMarketplace\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 class PruneProcessedEventsDisabledTest extends TestCase
 {
     /**
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {

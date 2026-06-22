@@ -10,7 +10,7 @@ use LMendes\LaravelAwsMarketplace\AwsMarketplace as AwsMarketplaceManager;
  * @method static list<\LMendes\LaravelAwsMarketplace\DTO\Entitlement> entitlements(string $productCode, string $licenseArn)
  * @method static \LMendes\LaravelAwsMarketplace\DTO\MeterResult meter(string $licenseArn, string $customerAccountId, \LMendes\LaravelAwsMarketplace\DTO\UsageRecord ...$records)
  *
- * @see \LMendes\LaravelAwsMarketplace\AwsMarketplace
+ * @see AwsMarketplaceManager
  */
 class AwsMarketplace extends Facade
 {

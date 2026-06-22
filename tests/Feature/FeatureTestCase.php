@@ -2,6 +2,8 @@
 
 namespace LMendes\LaravelAwsMarketplace\Tests\Feature;
 
+use Illuminate\Foundation\Application;
+use Illuminate\Testing\TestResponse;
 use LMendes\LaravelAwsMarketplace\Tests\TestCase;
 
 abstract class FeatureTestCase extends TestCase
@@ -9,7 +11,7 @@ abstract class FeatureTestCase extends TestCase
     protected const SECRET = 'eventbridge-secret';
 
     /**
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {
@@ -22,7 +24,7 @@ abstract class FeatureTestCase extends TestCase
     /**
      * @param  array<string, mixed>  $payload
      */
-    protected function postWebhook(array $payload, bool $withSecret = true): \Illuminate\Testing\TestResponse
+    protected function postWebhook(array $payload, bool $withSecret = true): TestResponse
     {
         $headers = $withSecret ? ['X-Marketplace-Webhook-Secret' => self::SECRET] : [];
 

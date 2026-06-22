@@ -22,6 +22,8 @@
         "nesbot/carbon": "^3.0"
     },
     "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^10.0",
         "phpunit/phpunit": "^12.2"
@@ -35,6 +37,12 @@
         "psr-4": {
             "LMendes\\LaravelAwsMarketplace\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=512M",
+        "format": "pint",
+        "lint": "pint --test"
     },
     "extra": {
         "laravel": {

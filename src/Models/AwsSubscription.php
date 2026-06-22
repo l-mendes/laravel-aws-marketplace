@@ -4,6 +4,7 @@ namespace LMendes\LaravelAwsMarketplace\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 use LMendes\LaravelAwsMarketplace\Enums\SubscriptionStatus;
 
 /**
@@ -18,7 +19,7 @@ use LMendes\LaravelAwsMarketplace\Enums\SubscriptionStatus;
  * @property ?string $customer_account_id
  * @property ?string $customer_identifier
  * @property ?SubscriptionStatus $status
- * @property ?\Illuminate\Support\Carbon $current_period_end
+ * @property ?Carbon $current_period_end
  */
 class AwsSubscription extends Model
 {
@@ -35,6 +36,9 @@ class AwsSubscription extends Model
         return $this->table ?? config('marketplace-aws.persistence.table', 'aws_marketplace_subscriptions');
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function owner(): MorphTo
     {
         return $this->morphTo();

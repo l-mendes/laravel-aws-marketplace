@@ -1,0 +1,55 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \$id of class LMendes\\LaravelAwsMarketplace\\DTO\\Subscription constructor expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Http/Controllers/HandleWebhookController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>entitlements" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Http/Controllers/HandleWebhookController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$agreement_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_period_end\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer_account_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer_identifier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$license_arn\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Repositories/EloquentSubscriptionRepository.php

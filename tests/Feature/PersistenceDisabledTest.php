@@ -2,6 +2,7 @@
 
 namespace LMendes\LaravelAwsMarketplace\Tests\Feature;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Event;
 use LMendes\LaravelAwsMarketplace\Contracts\ProcessedEventStore;
 use LMendes\LaravelAwsMarketplace\Contracts\SubscriptionRepository;
@@ -11,7 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 class PersistenceDisabledTest extends FeatureTestCase
 {
     /**
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {

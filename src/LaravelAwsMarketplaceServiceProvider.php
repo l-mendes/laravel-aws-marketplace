@@ -25,7 +25,7 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/marketplace-aws.php', 'marketplace-aws');
+        $this->mergeConfigFrom(__DIR__.'/../config/marketplace-aws.php', 'marketplace-aws');
 
         $this->app->singleton(MarketplaceMeteringClient::class, function () {
             return $this->sdk()->createMarketplaceMetering($this->clientConfig());
@@ -62,12 +62,12 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app['config']->get('marketplace-aws.persistence.enabled', true)) {
+        if ($this->app->make('config')->get('marketplace-aws.persistence.enabled', true)) {
             $this->app->singleton(SubscriptionRepository::class, function ($app) {
                 return new EloquentSubscriptionRepository($app['config']->get('marketplace-aws.persistence.model'));
             });
 
-            if ($this->app['config']->get('marketplace-aws.persistence.idempotency.enabled', true)) {
+            if ($this->app->make('config')->get('marketplace-aws.persistence.idempotency.enabled', true)) {
                 $this->app->singleton(ProcessedEventStore::class, function ($app) {
                     return new EloquentProcessedEventStore($app['config']->get('marketplace-aws.persistence.idempotency.model'));
                 });
@@ -75,11 +75,11 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__ . '/../config/marketplace-aws.php' => $this->app->configPath('marketplace-aws.php'),
+            __DIR__.'/../config/marketplace-aws.php' => $this->app->configPath('marketplace-aws.php'),
         ], 'aws-marketplace-config');
 
         $this->publishes([
-            __DIR__ . '/../database/migrations' => $this->app->databasePath('migrations'),
+            __DIR__.'/../database/migrations' => $this->app->databasePath('migrations'),
         ], 'aws-marketplace-migrations');
 
         if ($this->app->runningInConsole()) {
@@ -91,7 +91,7 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
 
     protected function registerRoutes(): void
     {
-        $config = $this->app['config'];
+        $config = $this->app->make('config');
 
         if (! $config->get('marketplace-aws.routes.enabled', true)) {
             return;
@@ -103,7 +103,7 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
         $webhook = $routes['webhook'] ?? [];
 
         /** @var Router $router */
-        $router = $this->app['router'];
+        $router = $this->app->make('router');
 
         $router->group([
             'prefix' => $routes['prefix'] ?? 'marketplace/aws',
@@ -114,13 +114,13 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
                 $landing['uri'] ?? 'landing',
                 HandleLandingController::class,
             )->middleware($landing['middleware'] ?? [])
-                ->name($namePrefix . 'landing');
+                ->name($namePrefix.'landing');
 
             $router->post(
                 $webhook['uri'] ?? 'webhook',
                 HandleWebhookController::class,
             )->middleware(array_merge([VerifyEventBridgeWebhook::class], $webhook['middleware'] ?? []))
-                ->name($namePrefix . 'webhook');
+                ->name($namePrefix.'webhook');
         });
     }
 

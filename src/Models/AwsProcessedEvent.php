@@ -3,6 +3,7 @@
 namespace LMendes\LaravelAwsMarketplace\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Default Eloquent model recording processed events for webhook deduplication. Swap it through
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * processed.
  *
  * @property string $event_key
- * @property ?\Illuminate\Support\Carbon $processed_at
+ * @property ?Carbon $processed_at
  */
 class AwsProcessedEvent extends Model
 {

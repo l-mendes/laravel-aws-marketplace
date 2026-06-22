@@ -2,12 +2,13 @@
 
 namespace LMendes\LaravelAwsMarketplace\Tests\Feature;
 
+use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 
 class RoutesDisabledTest extends FeatureTestCase
 {
     /**
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {
