@@ -114,26 +114,26 @@ class HandleWebhookController
             return null;
         }
 
-        return $repository->save($this->overlay($event, $existing));
+        return $repository->save($this->overlay($event->agreementId, $event, $existing));
     }
 
     /**
      * Build the subscription to persist by overlaying the event onto the existing row: take each event
      * value when present, otherwise keep what is stored, so a partial event never nulls data.
      */
-    private function overlay(AwsMarketplaceEvent $event, ?Subscription $existing): Subscription
+    private function overlay(string $agreementId, AwsMarketplaceEvent $event, ?Subscription $existing): Subscription
     {
         $keepExistingRaw = $existing !== null && $existing->raw !== [];
 
         return new Subscription(
-            id: $event->agreementId,
+            id: $agreementId,
             licenseArn: $event->licenseArn ?? $existing?->licenseArn,
             productCode: $event->productCode ?? $existing?->productCode,
             customerAccountId: $event->customerAccountId ?? $existing?->customerAccountId,
             customerIdentifier: $existing?->customerIdentifier,
             status: $event->type->toSubscriptionStatus() ?? $existing?->status,
             currentPeriodEnd: $event->currentPeriodEnd ?? $existing?->currentPeriodEnd,
-            entitlements: $existing?->entitlements ?? [],
+            entitlements: $existing !== null ? $existing->entitlements : [],
             raw: $keepExistingRaw ? $existing->raw : $event->raw,
         );
     }

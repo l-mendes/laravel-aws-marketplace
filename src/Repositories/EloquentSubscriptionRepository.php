@@ -2,14 +2,14 @@
 
 namespace LMendes\LaravelAwsMarketplace\Repositories;
 
-use Illuminate\Database\Eloquent\Model;
 use LMendes\LaravelAwsMarketplace\Contracts\SubscriptionRepository;
 use LMendes\LaravelAwsMarketplace\DTO\Subscription;
+use LMendes\LaravelAwsMarketplace\Models\AwsSubscription;
 
 class EloquentSubscriptionRepository implements SubscriptionRepository
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param  class-string<AwsSubscription>  $model
      */
     public function __construct(
         private readonly string $model,
@@ -47,7 +47,7 @@ class EloquentSubscriptionRepository implements SubscriptionRepository
         return $this->toDataObject($model);
     }
 
-    private function toDataObject(Model $model): Subscription
+    private function toDataObject(AwsSubscription $model): Subscription
     {
         return new Subscription(
             id: $model->agreement_id,
