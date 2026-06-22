@@ -983,8 +983,10 @@ What you can do with persistence:
   ```
 
 - Swap the models via `marketplace-aws.persistence.model` and
-  `marketplace-aws.persistence.idempotency.model` to integrate with your own schema (implement the same
-  columns, or bind your own `SubscriptionRepository` / `ProcessedEventStore`).
+  `marketplace-aws.persistence.idempotency.model`. Extend `AwsSubscription` rather than only replicating
+  its columns: the default `EloquentSubscriptionRepository` reads the row through that model's casts
+  (`status` to the `SubscriptionStatus` enum, `current_period_end` to a date, `raw` to an array). To map a
+  different schema entirely, bind your own `SubscriptionRepository` / `ProcessedEventStore`.
 
 - Disable persistence with `marketplace-aws.persistence.enabled = false` to manage state yourself. The
   webhook still dispatches events, but without dedup (at-least-once) and without a stored subscription

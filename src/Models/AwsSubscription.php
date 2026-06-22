@@ -9,9 +9,11 @@ use LMendes\LaravelAwsMarketplace\Enums\SubscriptionStatus;
 
 /**
  * Default Eloquent model for a persisted AWS Marketplace subscription, keyed by `agreement_id`. Swap it
- * through `marketplace-aws.persistence.model` to integrate with your own schema. The polymorphic `owner`
- * links the subscription to your user/tenant; `license_arn` is the operational handle, filled in once a
- * License event links it to the agreement.
+ * through `marketplace-aws.persistence.model`; a replacement should extend this model so the default
+ * `EloquentSubscriptionRepository` keeps the casts it reads (`status`, `current_period_end`, `raw`), or
+ * bind your own `SubscriptionRepository` to map a different schema. The polymorphic `owner` links the
+ * subscription to your user/tenant; `license_arn` is the operational handle, filled in once a License
+ * event links it to the agreement.
  *
  * @property string $agreement_id
  * @property ?string $license_arn
