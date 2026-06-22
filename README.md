@@ -1,5 +1,10 @@
 # laravel-aws-marketplace
 
+[![CI](https://github.com/l-mendes/laravel-aws-marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/l-mendes/laravel-aws-marketplace/actions/workflows/ci.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/l-mendes/laravel-aws-marketplace.svg)](https://packagist.org/packages/l-mendes/laravel-aws-marketplace)
+[![Total Downloads](https://img.shields.io/packagist/dt/l-mendes/laravel-aws-marketplace.svg)](https://packagist.org/packages/l-mendes/laravel-aws-marketplace)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A standalone AWS Marketplace integration for Laravel SaaS products. It handles the post-subscribe
 registration handshake, contract entitlements, metered usage, and the EventBridge lifecycle webhook, and
 gives you typed domain events to react to: normalized, but never hiding the native AWS fields.
