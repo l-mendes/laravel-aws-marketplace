@@ -9,9 +9,24 @@ return [
     // called in.
     'region' => env('AWS_MARKETPLACE_REGION', 'us-east-1'),
 
+    // Dedicated credentials for the seller account, used only by the Marketplace API clients. Set these
+    // when the Marketplace (seller) account is separate from the account hosting the app and you want to
+    // authenticate with the seller account's own access key / secret directly. They are kept apart from
+    // the global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY the rest of the app uses (S3, SES, SQS, ...),
+    // so the two never collide. Leave empty to fall back to the default SDK credential chain (env, shared
+    // config, instance/task role). When a role ARN is also set below, these become the source identity
+    // that assumes that role, so the assumption can run off-AWS (for example local development) without
+    // borrowing the application's global credentials.
+    'credentials' => [
+        'key' => env('AWS_MARKETPLACE_ACCESS_KEY_ID'),
+        'secret' => env('AWS_MARKETPLACE_SECRET_ACCESS_KEY'),
+        'token' => env('AWS_MARKETPLACE_SESSION_TOKEN'),
+    ],
+
     // The Marketplace APIs are authorized against the registered seller account, which may differ from
     // the account hosting the app. When an ARN is set, the app assumes this seller-account role for
-    // those calls; left empty, the default SDK credentials are used (single-account / local).
+    // those calls (sourced from the credentials above, or the default chain); left empty, those
+    // credentials are used directly.
     'role' => [
         'arn' => env('AWS_MARKETPLACE_ROLE_ARN'),
         'external_id' => env('AWS_MARKETPLACE_ROLE_EXTERNAL_ID'),

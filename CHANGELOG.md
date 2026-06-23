@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Dedicated seller-account credentials for the Marketplace API clients via `AWS_MARKETPLACE_ACCESS_KEY_ID`,
+  `AWS_MARKETPLACE_SECRET_ACCESS_KEY`, and `AWS_MARKETPLACE_SESSION_TOKEN` (config `credentials.*`). They
+  are scoped to the Marketplace clients and never touch the global `AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY`, so a separate Marketplace account no longer collides with the credentials the
+  host app uses for S3, SES, SQS, and so on. When a seller-role ARN is also configured, these credentials
+  become the source identity that assumes it. Defaults preserve the previous behaviour (default AWS
+  credential chain).
+
 ## [0.1.0] - 2026-06-22
 
 ### Added

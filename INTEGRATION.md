@@ -85,7 +85,8 @@ Buyer subscribes on AWS
   development against real AWS you can use a tunnel such as ngrok (see Step 14).
 - AWS credentials available to your app through the standard provider chain (environment variables,
   shared config, or an instance/task role). If the app runs in a different AWS account than the listing,
-  you also need a role in the seller account that the app can assume (see Step 2).
+  either set dedicated seller-account credentials or a role in the seller account that the app can assume
+  (see Step 2).
 
 ## 3. Step 1: Install the package
 
@@ -124,6 +125,15 @@ AWS_MARKETPLACE_REGION=us-east-1
 AWS_MARKETPLACE_EVENTBRIDGE_WEBHOOK_SECRET=replace-with-a-long-random-string
 AWS_MARKETPLACE_EVENTBRIDGE_WEBHOOK_HEADER=X-Marketplace-Webhook-Secret
 
+# Optional: dedicated credentials for the seller account, used only by the Marketplace clients. Set these
+# when the Marketplace account is separate from the one hosting the app and you want to authenticate with
+# the seller account's own key/secret. They are kept apart from the global AWS_ACCESS_KEY_ID /
+# AWS_SECRET_ACCESS_KEY the rest of the app uses, so the two never collide. Leave empty to use the default
+# credential chain.
+AWS_MARKETPLACE_ACCESS_KEY_ID=
+AWS_MARKETPLACE_SECRET_ACCESS_KEY=
+AWS_MARKETPLACE_SESSION_TOKEN=
+
 # Optional: assume your seller-account role for the Marketplace APIs. Leave empty to use the default AWS
 # credential chain (single-account or local development).
 AWS_MARKETPLACE_ROLE_ARN=
@@ -131,17 +141,27 @@ AWS_MARKETPLACE_ROLE_EXTERNAL_ID=
 AWS_MARKETPLACE_ROLE_SESSION_NAME=laravel-aws-marketplace
 ```
 
-### Credentials and the seller-account role
+### Credentials and the seller account
 
 The Marketplace APIs (ResolveCustomer, GetEntitlements, BatchMeterUsage) are authorized against the
-account that published the listing. Two cases:
+account that published the listing (the seller account). There are three ways to supply credentials,
+listed in the order the package prefers them:
 
-- Your app runs in the seller account (or with credentials for it). Leave `AWS_MARKETPLACE_ROLE_ARN`
-  empty; the default AWS credential chain is used.
-- Your app runs in a different account. Create a role in the seller account that trusts your app's
+- **Same account / default chain.** Your app runs in the seller account, or already has credentials for
+  it on the default AWS chain. Leave everything below empty; the default chain (env, shared config,
+  instance/task role) is used.
+- **Dedicated seller-account credentials.** The seller account is separate from the account hosting the
+  app and you have an IAM user in it. Set `AWS_MARKETPLACE_ACCESS_KEY_ID` and
+  `AWS_MARKETPLACE_SECRET_ACCESS_KEY` (and `AWS_MARKETPLACE_SESSION_TOKEN` for temporary credentials).
+  These are used only by the Marketplace clients and never touch the global
+  `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` the rest of your app uses for S3, SES, SQS, and so on, so
+  the two cannot collide. This is the simplest option for local development against the seller account.
+- **Assumed seller-account role.** Create a role in the seller account that trusts your source
   principal, grant it the Marketplace permissions below, and set `AWS_MARKETPLACE_ROLE_ARN` to it (plus
   `AWS_MARKETPLACE_ROLE_EXTERNAL_ID` if the trust policy requires it). The package assumes that role via
-  STS for every Marketplace call.
+  STS for every Marketplace call. The assumption is sourced from the dedicated credentials above when
+  they are set, otherwise from the default chain; either way it is an ordinary STS call, so it works
+  off-AWS (local development) as well as from an instance/task role in production.
 
 The IAM principal that ends up making the calls needs:
 
@@ -162,8 +182,9 @@ The IAM principal that ends up making the calls needs:
 }
 ```
 
-If you assume a seller role, the app's own principal additionally needs `sts:AssumeRole` on that role's
-ARN, and the role's trust policy must allow your principal.
+If you assume a seller role, the source principal (the dedicated credentials when set, otherwise the
+app's default identity) additionally needs `sts:AssumeRole` on that role's ARN, and the role's trust
+policy must allow that principal.
 
 ### What the config file controls
 
@@ -173,7 +194,8 @@ production-sensible; the keys you are most likely to touch:
 | Key | Default | Purpose |
 | --- | --- | --- |
 | `region` | `us-east-1` | Region for the Marketplace API clients. |
-| `role.arn` / `role.external_id` / `role.session_name` | null / null / `laravel-aws-marketplace` | Seller-role assumption. |
+| `credentials.key` / `credentials.secret` / `credentials.token` | null / null / null | Dedicated seller-account credentials for the Marketplace clients, kept separate from the app's global AWS credentials. |
+| `role.arn` / `role.external_id` / `role.session_name` | null / null / `laravel-aws-marketplace` | Seller-role assumption (sourced from `credentials.*` when set, else the default chain). |
 | `eventbridge.webhook_secret` | null | Shared secret the webhook middleware checks. |
 | `eventbridge.webhook_secret_header` | `X-Marketplace-Webhook-Secret` | Header the secret is read from. |
 | `persistence.enabled` | `true` | Persist subscriptions and dedupe events. See Step 13. |
@@ -1153,7 +1175,7 @@ and watch the landing redirect and the events arrive.
 | Metering records in `rejected` | Transient AWS issue; retry (AWS de-duplicates). Records with `CustomerNotSubscribed`/`DuplicateRecord` show up in `accepted` with that `Status`, not in `rejected`. |
 | Duplicate provisioning | Make handlers idempotent (Step 6). The package dedupes deliveries, but the same state can arrive via different events. |
 | Access revoked on renewal | You revoked on `SubscriptionSuperseded`. That is not a cancellation; do not revoke there (Step 11). |
-| `AccessDenied` on a Marketplace call | Missing IAM action, or the app is not running as the seller account. Add the action or set `AWS_MARKETPLACE_ROLE_ARN`. |
+| `AccessDenied` on a Marketplace call | Missing IAM action, or the credentials are not for the seller account. Add the action, set the dedicated `AWS_MARKETPLACE_ACCESS_KEY_ID` / `AWS_MARKETPLACE_SECRET_ACCESS_KEY`, or set `AWS_MARKETPLACE_ROLE_ARN`. |
 
 ## 17. Reference
 

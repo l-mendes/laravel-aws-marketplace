@@ -81,6 +81,14 @@ AWS_MARKETPLACE_REGION=us-east-1
 AWS_MARKETPLACE_EVENTBRIDGE_WEBHOOK_SECRET=change-me
 AWS_MARKETPLACE_EVENTBRIDGE_WEBHOOK_HEADER=X-Marketplace-Webhook-Secret
 
+# Optional: dedicated credentials for the seller account, used only by the Marketplace clients and kept
+# separate from the global AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY the rest of the app uses. Set these
+# when the Marketplace account is separate from the one hosting the app; leave empty to use the default
+# chain. When a role ARN is also set, these become the identity that assumes it.
+AWS_MARKETPLACE_ACCESS_KEY_ID=
+AWS_MARKETPLACE_SECRET_ACCESS_KEY=
+AWS_MARKETPLACE_SESSION_TOKEN=
+
 # Optional: assume a seller-account role for the Marketplace APIs.
 # Leave empty to use the default AWS credential chain (env, shared config, instance/task role).
 AWS_MARKETPLACE_ROLE_ARN=
