@@ -6,6 +6,7 @@ use Aws\Credentials\CredentialProvider;
 use Aws\MarketplaceEntitlementService\MarketplaceEntitlementServiceClient;
 use Aws\MarketplaceMetering\MarketplaceMeteringClient;
 use Aws\Sdk;
+use Aws\Sts\StsClient;
 use Illuminate\Contracts\Routing\Registrar as Router;
 use Illuminate\Support\ServiceProvider;
 use LMendes\LaravelAwsMarketplace\Console\InstallCommand;
@@ -26,6 +27,10 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/marketplace-aws.php', 'marketplace-aws');
+
+        $this->app->singleton(StsClient::class, function () {
+            return $this->sdk()->createSts($this->stsConfig());
+        });
 
         $this->app->singleton(MarketplaceMeteringClient::class, function () {
             return $this->sdk()->createMarketplaceMetering($this->clientConfig());
@@ -125,6 +130,10 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
     }
 
     /**
+     * Resolve the credentials for the Marketplace API clients. A seller-role ARN takes precedence and is
+     * assumed via STS; otherwise the dedicated seller-account credentials are used directly, and when
+     * neither is configured the default AWS provider chain applies.
+     *
      * @return array<string, mixed>
      */
     private function clientConfig(): array
@@ -132,9 +141,12 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
         $config = ['region' => config('marketplace-aws.region')];
 
         $roleArn = config('marketplace-aws.role.arn');
+        $credentials = $this->dedicatedCredentials();
 
         if ($roleArn) {
             $config['credentials'] = $this->sellerRoleCredentials($roleArn);
+        } elseif ($credentials !== null) {
+            $config['credentials'] = $credentials;
         }
 
         return $config;
@@ -142,7 +154,9 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
 
     /**
      * Assume the seller-account role so the Marketplace APIs run under the account that owns the
-     * listing, even when the application is hosted in a different AWS account.
+     * listing, even when the application is hosted in a different AWS account. The STS client that
+     * performs the assumption is itself sourced from the dedicated credentials (or the default chain),
+     * so the assumption can originate off-AWS without borrowing the application's global credentials.
      */
     private function sellerRoleCredentials(string $roleArn): callable
     {
@@ -157,10 +171,49 @@ class LaravelAwsMarketplaceServiceProvider extends ServiceProvider
 
         return CredentialProvider::memoize(
             CredentialProvider::assumeRole([
-                'client' => $this->sdk()->createSts(['region' => config('marketplace-aws.region')]),
+                'client' => $this->app->make(StsClient::class),
                 'assume_role_params' => $params,
             ])
         );
+    }
+
+    /**
+     * Dedicated static credentials for the seller account, kept separate from the application's global
+     * AWS credentials so they never collide with the host app's S3 / SES / SQS configuration. Returns
+     * null when not fully configured, leaving the default AWS provider chain in place.
+     *
+     * @return array{key: string, secret: string, token?: string}|null
+     */
+    private function dedicatedCredentials(): ?array
+    {
+        $key = config('marketplace-aws.credentials.key');
+        $secret = config('marketplace-aws.credentials.secret');
+
+        if (empty($key) || empty($secret)) {
+            return null;
+        }
+
+        $credentials = ['key' => (string) $key, 'secret' => (string) $secret];
+
+        if ($token = config('marketplace-aws.credentials.token')) {
+            $credentials['token'] = (string) $token;
+        }
+
+        return $credentials;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stsConfig(): array
+    {
+        $config = ['region' => config('marketplace-aws.region')];
+
+        if (($credentials = $this->dedicatedCredentials()) !== null) {
+            $config['credentials'] = $credentials;
+        }
+
+        return $config;
     }
 
     /**
