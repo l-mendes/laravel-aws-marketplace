@@ -188,10 +188,13 @@ use LMendes\LaravelAwsMarketplace\DTO\UsageRecord;
 
 $entitlements = AwsMarketplace::entitlements($productCode, $licenseArn);
 
-AwsMarketplace::meter($licenseArn, $customerAccountId, new UsageRecord(
+$result = AwsMarketplace::meter($licenseArn, $customerAccountId, new UsageRecord(
     dimension: 'your_usage_dimension',
     quantity: 7,
 ));
+
+// $result groups MeteredRecord objects into accepted / rejected / duplicates / unprocessed.
+// Retry $result->unprocessed (transient failures); see INTEGRATION.md for the full handling.
 ```
 
 ## Documentation

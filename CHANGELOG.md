@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `MeterResult` (BatchMeterUsage) now classifies each record by its per-record AWS `Status` instead of
+  treating every entry in `Results` as accepted. `accepted` holds only `Success` records; new `duplicates`
+  (`DuplicateRecord`) and `unprocessed` (the `UnprocessedRecords` list, transient failures to retry)
+  buckets join `rejected`, which now holds permanent drops (`CustomerNotSubscribed` or an unrecognized
+  status). Every bucket holds typed `MeteredRecord` objects (`dimension`, `quantity`, `customerAccountId`,
+  `meteringRecordId`, `timestamp`, `raw`) instead of raw SDK arrays, so records previously surfaced as
+  unprocessed move from `rejected` to `unprocessed`.
+
 ## [0.2.0] - 2026-06-23
 
 ### Added

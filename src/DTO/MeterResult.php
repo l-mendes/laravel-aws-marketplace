@@ -3,19 +3,24 @@
 namespace LMendes\LaravelAwsMarketplace\DTO;
 
 /**
- * The outcome of reporting metered usage to AWS Marketplace (BatchMeterUsage): the records AWS accepted
- * and the ones it could not process, plus the untouched API response in `raw`.
+ * The outcome of reporting metered usage to AWS Marketplace (BatchMeterUsage), normalized by the
+ * per-record `Status` AWS returns inside `Results` plus the separate `UnprocessedRecords` list, with the
+ * untouched API response kept in `raw`.
  */
 final readonly class MeterResult
 {
     /**
-     * @param  list<array<string, mixed>>  $accepted
-     * @param  list<array<string, mixed>>  $rejected
+     * @param  list<MeteredRecord>  $accepted  Results AWS counted (Status `Success`).
+     * @param  list<MeteredRecord>  $rejected  Results AWS dropped permanently (Status `CustomerNotSubscribed` or any unrecognized status); retrying will not help.
+     * @param  list<MeteredRecord>  $duplicates  Results AWS had already counted for the window (Status `DuplicateRecord`); idempotent no-ops, not failures.
+     * @param  list<MeteredRecord>  $unprocessed  Records AWS could not process due to a transient error (UnprocessedRecords); these should be retried.
      * @param  array<string, mixed>  $raw
      */
     public function __construct(
         public array $accepted = [],
         public array $rejected = [],
+        public array $duplicates = [],
+        public array $unprocessed = [],
         public array $raw = [],
     ) {}
 }

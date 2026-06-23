@@ -3,6 +3,7 @@
 namespace LMendes\LaravelAwsMarketplace\Tests\Feature;
 
 use LMendes\LaravelAwsMarketplace\AwsMarketplace as AwsMarketplaceManager;
+use LMendes\LaravelAwsMarketplace\DTO\MeteredRecord;
 use LMendes\LaravelAwsMarketplace\DTO\MeterResult;
 use LMendes\LaravelAwsMarketplace\DTO\ResolvedCustomer;
 use LMendes\LaravelAwsMarketplace\DTO\UsageRecord;
@@ -32,7 +33,7 @@ class AwsMarketplaceTest extends TestCase
         $metering->shouldReceive('meter')
             ->once()
             ->withArgs(fn (string $arn, string $account, UsageRecord ...$records): bool => $arn === 'arn-1' && $account === 'acct-1' && count($records) === 1)
-            ->andReturn(new MeterResult(accepted: [['ok' => true]]));
+            ->andReturn(new MeterResult(accepted: [new MeteredRecord(dimension: 'api', quantity: 3)]));
 
         $this->app->instance(AwsResolveCustomerService::class, $resolver);
         $this->app->instance(AwsEntitlementService::class, $entitlements);
@@ -41,6 +42,9 @@ class AwsMarketplaceTest extends TestCase
 
         $this->assertSame('arn-1', AwsMarketplace::resolve('tok')->licenseArn);
         $this->assertSame([], AwsMarketplace::entitlements('prod-x', 'arn-1'));
-        $this->assertSame([['ok' => true]], AwsMarketplace::meter('arn-1', 'acct-1', new UsageRecord(dimension: 'api', quantity: 3))->accepted);
+        $accepted = AwsMarketplace::meter('arn-1', 'acct-1', new UsageRecord(dimension: 'api', quantity: 3))->accepted;
+        $this->assertCount(1, $accepted);
+        $this->assertSame('api', $accepted[0]->dimension);
+        $this->assertSame(3, $accepted[0]->quantity);
     }
 }

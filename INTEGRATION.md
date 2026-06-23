@@ -811,9 +811,11 @@ $result = AwsMarketplace::meter(
     new UsageRecord(dimension: 'gb_processed', quantity: 34),
 );
 
-// $result->accepted  -> records AWS processed, each with a per-record Status
-// $result->rejected  -> records AWS could not accept; retry these
-// $result->raw       -> the full BatchMeterUsage response
+// $result->accepted    -> records AWS counted (each a MeteredRecord)
+// $result->rejected    -> records AWS dropped for good (e.g. customer not subscribed); do not retry
+// $result->duplicates  -> records AWS had already counted this window (idempotent no-ops)
+// $result->unprocessed -> records AWS could not process (transient); retry these
+// $result->raw         -> the full BatchMeterUsage response
 ```
 
 How AWS counts, and the rules that follow from it:
@@ -828,20 +830,31 @@ How AWS counts, and the rules that follow from it:
 - One `meter()` call is one BatchMeterUsage call. Keep it to a single license's handful of dimensions
   (AWS caps a call at 25 records); call `meter()` once per tenant.
 
-`accepted` holds AWS `Results` and `rejected` holds `UnprocessedRecords`. Inspect each accepted record's
-`Status` (for example `Success`, `CustomerNotSubscribed`, `DuplicateRecord`) and retry anything in
-`rejected`:
+`MeterResult` normalizes the BatchMeterUsage response into four buckets of `MeteredRecord` objects
+(`dimension`, `quantity`, `customerAccountId`, `meteringRecordId`, `timestamp`, and the untouched AWS
+entry in `raw`). AWS returns a per-record `Status` inside `Results` plus a separate `UnprocessedRecords`
+list; the buckets split them by what you should do next:
+
+- `accepted` - `Status: Success`; AWS counted the usage.
+- `rejected` - `Status: CustomerNotSubscribed`, or a status the package does not recognize. Permanent;
+  retrying will not help. The raw AWS status is in `$record->raw['Status']`.
+- `duplicates` - `Status: DuplicateRecord`; AWS had already counted an identical record this window, so
+  these are safe no-ops, not failures.
+- `unprocessed` - the `UnprocessedRecords` list; a transient failure. Retry these (AWS de-duplicates, so
+  resending is safe).
 
 ```php
-foreach ($result->accepted as $record) {
-    if (($record['Status'] ?? null) !== 'Success') {
-        Log::warning('Metering record not successful', $record);
-    }
+foreach ($result->rejected as $record) {
+    // Permanent: the customer is not subscribed, or AWS returned a status we do not recognize.
+    Log::warning('Metering record rejected', [
+        'dimension' => $record->dimension,
+        'status' => $record->raw['Status'] ?? null,
+    ]);
 }
 
-if ($result->rejected !== []) {
+if ($result->unprocessed !== []) {
     // Transient: retry now or on the next run. AWS de-duplicates, so resending is safe.
-    Log::warning('Metering records unprocessed; will retry', ['count' => count($result->rejected)]);
+    Log::warning('Metering records unprocessed; will retry', ['count' => count($result->unprocessed)]);
 }
 ```
 
@@ -884,7 +897,7 @@ class ReportMarketplaceUsage extends Command
 
             $result = AwsMarketplace::meter($tenant->aws_license_arn, $tenant->aws_customer_account_id, ...$records);
 
-            if ($result->rejected !== []) {
+            if ($result->unprocessed !== []) {
                 $this->warn("Unprocessed records for tenant {$tenant->getKey()}; will retry next run.");
             }
         }
@@ -1157,7 +1170,7 @@ and watch the landing redirect and the events arrive.
 - A decision per listener on synchronous vs queued (Step 6), with queue retries and failed-job alerting
   if queued.
 - For usage products: the hourly `marketplace:report-usage` schedule, with monitoring on
-  `$result->rejected`.
+  `$result->unprocessed` (retry) and `$result->rejected` (permanent drops).
 - `AWS_MARKETPLACE_IDEMPOTENCY_TTL_DAYS` set and `aws-marketplace:prune-events` scheduled.
 - Monitoring on webhook 401s (secret drift) and 500s (listener failures), and on the manual-reconciliation
   warning from renewals.
@@ -1172,7 +1185,8 @@ and watch the landing redirect and the events arrive.
 | `licenseArn` is null | Only license events carry it. Wait for the License Updated event, or read it from the persisted subscription rather than the agreement event. |
 | Tenant never links to its agreement | The link is finalized on License Updated. Confirm that event reaches the webhook and that the tenant's `aws_license_arn` matches the event's. |
 | Entitlements come back empty | Usage-only product (expected), wrong `productCode`/`licenseArn`, or called before License Updated. Re-check after the Updated event. |
-| Metering records in `rejected` | Transient AWS issue; retry (AWS de-duplicates). Records with `CustomerNotSubscribed`/`DuplicateRecord` show up in `accepted` with that `Status`, not in `rejected`. |
+| Metering records in `unprocessed` | Transient AWS issue; retry (AWS de-duplicates). |
+| Metering records in `rejected` | Permanent: `CustomerNotSubscribed` (the customer is not entitled) or a status the package does not recognize; retrying will not help. `DuplicateRecord` lands in `duplicates`, a safe no-op, not here. |
 | Duplicate provisioning | Make handlers idempotent (Step 6). The package dedupes deliveries, but the same state can arrive via different events. |
 | Access revoked on renewal | You revoked on `SubscriptionSuperseded`. That is not a cancellation; do not revoke there (Step 11). |
 | `AccessDenied` on a Marketplace call | Missing IAM action, or the credentials are not for the seller account. Add the action, set the dedicated `AWS_MARKETPLACE_ACCESS_KEY_ID` / `AWS_MARKETPLACE_SECRET_ACCESS_KEY`, or set `AWS_MARKETPLACE_ROLE_ARN`. |

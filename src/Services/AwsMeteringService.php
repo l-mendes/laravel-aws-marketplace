@@ -4,6 +4,9 @@ namespace LMendes\LaravelAwsMarketplace\Services;
 
 use Aws\MarketplaceMetering\MarketplaceMeteringClient;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use DateTimeInterface;
+use LMendes\LaravelAwsMarketplace\DTO\MeteredRecord;
 use LMendes\LaravelAwsMarketplace\DTO\MeterResult;
 use LMendes\LaravelAwsMarketplace\DTO\UsageRecord;
 
@@ -35,10 +38,60 @@ class AwsMeteringService
             'UsageRecords' => $usageRecords,
         ]);
 
+        $accepted = [];
+        $rejected = [];
+        $duplicates = [];
+
+        foreach ($result['Results'] ?? [] as $item) {
+            $record = $this->toRecord($item['UsageRecord'] ?? [], $item, $item['MeteringRecordId'] ?? null);
+
+            match ($item['Status'] ?? null) {
+                'Success' => $accepted[] = $record,
+                'DuplicateRecord' => $duplicates[] = $record,
+                default => $rejected[] = $record,
+            };
+        }
+
+        $unprocessed = array_values(array_map(
+            fn (array $item): MeteredRecord => $this->toRecord($item, $item, null),
+            $result['UnprocessedRecords'] ?? [],
+        ));
+
         return new MeterResult(
-            accepted: $result['Results'] ?? [],
-            rejected: $result['UnprocessedRecords'] ?? [],
+            accepted: $accepted,
+            rejected: $rejected,
+            duplicates: $duplicates,
+            unprocessed: $unprocessed,
             raw: $result->toArray(),
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $usage  The UsageRecord fields AWS echoes back.
+     * @param  array<string, mixed>  $raw  The untouched AWS entry this record was mapped from.
+     */
+    private function toRecord(array $usage, array $raw, ?string $meteringRecordId): MeteredRecord
+    {
+        return new MeteredRecord(
+            dimension: $usage['Dimension'] ?? '',
+            quantity: (int) ($usage['Quantity'] ?? 0),
+            customerAccountId: $usage['CustomerAWSAccountId'] ?? null,
+            meteringRecordId: $meteringRecordId,
+            timestamp: $this->toTimestamp($usage['Timestamp'] ?? null),
+            raw: $raw,
+        );
+    }
+
+    private function toTimestamp(mixed $value): ?CarbonInterface
+    {
+        if ($value instanceof DateTimeInterface) {
+            return CarbonImmutable::instance($value);
+        }
+
+        if (is_int($value)) {
+            return CarbonImmutable::createFromTimestamp($value);
+        }
+
+        return null;
     }
 }
