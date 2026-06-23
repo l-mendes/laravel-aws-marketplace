@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-23
+
 ### Added
 
 - Dedicated seller-account credentials for the Marketplace API clients via `AWS_MARKETPLACE_ACCESS_KEY_ID`,
@@ -33,5 +35,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repositories and a polymorphic owner.
 - Console commands `aws-marketplace:install` and `aws-marketplace:prune-events`.
 
-[Unreleased]: https://github.com/l-mendes/laravel-aws-marketplace/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/l-mendes/laravel-aws-marketplace/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/l-mendes/laravel-aws-marketplace/releases/tag/v0.2.0
 [0.1.0]: https://github.com/l-mendes/laravel-aws-marketplace/releases/tag/v0.1.0
