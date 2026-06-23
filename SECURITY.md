@@ -7,7 +7,7 @@ still change between minor (0.x) versions.
 
 | Version | Supported |
 | --- | --- |
-| 0.1.x | yes |
+| 0.2.x | yes |
 
 ## Reporting a vulnerability
 
